@@ -1,0 +1,28 @@
+{
+  "name": "xa",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix frontend/next run dev",
+    "build": "npm --prefix frontend/next run build",
+    "start": "npm --prefix frontend/next run start",
+    "vercel-build": "npm --prefix frontend/next ci && npm --prefix frontend/next run build"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.108.2",
+    "@tanstack/react-query": "^5.101.0",
+    "next": "16.2.9",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "react-router-dom": "^7.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.12.3",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "~6.0.2"
+  },
+  "overrides": {
+    "postcss": "8.5.10"
+  }
+}

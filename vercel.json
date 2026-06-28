@@ -1,6 +1,7 @@
 {
   "version": 2,
-  "buildCommand": "cd frontend/next && npm ci && npm run build",
+  "installCommand": "npm ci",
+  "buildCommand": "npm run vercel-build",
   "outputDirectory": "frontend/next/.next",
   "rewrites": [
     {
