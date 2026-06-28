@@ -1,0 +1,87 @@
+# Render Blueprint for AI Host.
+#
+# Deploys three services from this one repo:
+#   - aihost-backend   : FastAPI (Docker), runs migrations on boot
+#   - aihost-dashboard : business dashboard (Vite static build)
+#   - aihost-customer  : customer chat app (Vite static build)
+#
+# Values marked `sync: false` are NOT stored in the repo -- you set them in
+# the Render dashboard after the first deploy (they are secrets, or they are
+# the public URLs of sibling services that don't exist until created). See
+# DEPLOY.md for the exact, ordered steps.
+
+services:
+  # ---------------------------------------------------------------- Backend
+  - type: web
+    name: aihost-backend
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    # Bind Render's injected $PORT and run migrations before serving.
+    dockerCommand: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    healthCheckPath: /health
+    envVars:
+      # Supabase Postgres connection string. Use the SESSION/direct connection
+      # (port 5432), not the transaction pooler -- migrations run DDL on boot.
+      # Format: postgresql+psycopg://postgres:PASSWORD@HOST:5432/postgres
+      - key: DATABASE_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      # Only used for legacy HS256 projects. Projects on Supabase's newer
+      # asymmetric (ES256) signing keys are verified via the JWKS endpoint
+      # derived from SUPABASE_URL, so this can be left as a placeholder there.
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: DEEPSEEK_API_KEY
+        sync: false
+      - key: DEEPSEEK_BASE_URL
+        value: https://api.deepseek.com
+      - key: DEEPSEEK_MODEL
+        value: deepseek-chat
+      # Comma-separated allowed origins -- the two static-site URLs below.
+      # Fill in once those sites have been created (see DEPLOY.md).
+      - key: CORS_ORIGINS
+        sync: false
+
+  # -------------------------------------------------------------- Dashboard
+  - type: web
+    name: aihost-dashboard
+    runtime: static
+    rootDir: frontend/dashboard
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    # SPA: serve index.html for client-side routes.
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      # The backend's public URL, e.g. https://aihost-backend.onrender.com
+      - key: VITE_API_BASE_URL
+        sync: false
+      - key: VITE_SUPABASE_URL
+        sync: false
+      - key: VITE_SUPABASE_ANON_KEY
+        sync: false
+
+  # --------------------------------------------------------------- Customer
+  - type: web
+    name: aihost-customer
+    runtime: static
+    rootDir: frontend/customer
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_BASE_URL
+        sync: false

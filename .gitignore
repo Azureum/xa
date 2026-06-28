@@ -1,20 +1,29 @@
-node_modules
-.next
-out
-dist
-build
-.vercel
-work
-outputs
-
+# Environment
 .env
-.env.local
-.env*.local
+.env.*
+!.env.example
 
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
 
+# Node
+node_modules/
+.next/
+frontend/next/.next/
+dist/
+.vite/
+work/
+outputs/
+
+# Uploads / local storage
+backend/uploads/
+
+# Editors / OS
 .DS_Store
-Thumbs.db
+.vscode/
+.idea/
