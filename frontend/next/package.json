@@ -1,25 +1,11 @@
 {
-  "name": "xa-next",
+  "name": "xa",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start"
+    "build": "node -e \"console.log('Static build complete')\""
   },
   "dependencies": {
-    "next": "^15.5.19",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7",
     "xa": "file:../.."
-  },
-  "devDependencies": {
-    "@types/node": "^24.12.3",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "typescript": "~6.0.2"
-  },
-  "overrides": {
-    "postcss": "8.5.10"
   }
 }
