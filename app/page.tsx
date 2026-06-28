@@ -1,5 +1,22 @@
-import { LandingPage } from "../frontend/next/src/app/landing-page";
-
 export default function Page() {
-  return <LandingPage />;
+  return (
+    <main className="page">
+      <section className="hero" aria-labelledby="hero-title">
+        <p className="eyebrow">XA on Vercel</p>
+        <h1 id="hero-title">Production starter is live.</h1>
+        <p className="lede">
+          This is a clean, traditional Next.js app running from the repository
+          root so Vercel can build and deploy it with the standard workflow.
+        </p>
+        <div className="actions">
+          <a className="button button-primary" href="https://github.com/Azureum/xa">
+            GitHub
+          </a>
+          <a className="button button-secondary" href="https://vercel.com/docs">
+            Vercel Docs
+          </a>
+        </div>
+      </section>
+    </main>
+  );
 }
