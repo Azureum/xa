@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "npm --prefix frontend/next run dev",
-    "build": "npm --prefix frontend/next run build",
-    "start": "npm --prefix frontend/next run start",
-    "vercel-build": "npm --prefix frontend/next ci && npm --prefix frontend/next run build"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "vercel-build": "next build"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.108.2",

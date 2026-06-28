@@ -2,7 +2,7 @@
   "version": 2,
   "installCommand": "npm ci",
   "buildCommand": "npm run vercel-build",
-  "outputDirectory": "frontend/next/.next",
+  "outputDirectory": ".next",
   "rewrites": [
     {
       "source": "/api/:path*",
