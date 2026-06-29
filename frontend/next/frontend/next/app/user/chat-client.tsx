@@ -15,8 +15,6 @@ const initialMessages: ChatMessage[] = [
   },
 ];
 
-const quickPrompts = ["Pricing", "Book a demo", "Support", "Hours"];
-
 export function ChatClient() {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [config, setConfig] = useState<ChatConfig>(defaultChatConfig);
@@ -34,7 +32,12 @@ export function ChatClient() {
       }
 
       try {
-        const nextConfig = { ...defaultChatConfig, ...JSON.parse(stored) };
+        const parsed = JSON.parse(stored);
+        const nextConfig = {
+          ...defaultChatConfig,
+          ...parsed,
+          quickPrompts: Array.isArray(parsed.quickPrompts) ? parsed.quickPrompts : defaultChatConfig.quickPrompts,
+        };
         setConfig(nextConfig);
         setMessages([{ role: "assistant", content: nextConfig.greeting }]);
       } catch {
@@ -129,7 +132,7 @@ export function ChatClient() {
       </div>
 
       <div className="prompt-row" aria-label="Quick prompts">
-        {quickPrompts.map((prompt) => (
+        {config.quickPrompts.map((prompt) => (
           <button className="chip" type="button" key={prompt} onClick={() => void sendMessage(prompt)}>
             {prompt}
           </button>

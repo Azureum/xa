@@ -11,6 +11,7 @@ export type ChatConfig = {
   askClarifyingQuestions: boolean;
   collectLeadDetails: boolean;
   handoffEmail: string;
+  quickPrompts: string[];
 };
 
 export const chatConfigStorageKey = "xa-chat-config";
@@ -26,9 +27,26 @@ export const defaultChatConfig: ChatConfig = {
   askClarifyingQuestions: true,
   collectLeadDetails: true,
   handoffEmail: "support@example.com",
+  quickPrompts: ["Pricing", "Book a demo", "Support", "Hours"],
 };
 
 const toneOptions: ChatConfig["tone"][] = ["Helpful", "Concise", "Professional"];
+
+function normalizeConfig(value: Partial<ChatConfig>): ChatConfig {
+  const tone: ChatConfig["tone"] = toneOptions.includes(value.tone as ChatConfig["tone"])
+    ? (value.tone as ChatConfig["tone"])
+    : defaultChatConfig.tone;
+  const quickPrompts = Array.isArray(value.quickPrompts)
+    ? value.quickPrompts.filter((prompt) => typeof prompt === "string" && prompt.trim()).slice(0, 8)
+    : defaultChatConfig.quickPrompts;
+
+  return {
+    ...defaultChatConfig,
+    ...value,
+    tone,
+    quickPrompts,
+  };
+}
 
 function readStoredConfig(): ChatConfig {
   if (typeof window === "undefined") {
@@ -41,7 +59,7 @@ function readStoredConfig(): ChatConfig {
   }
 
   try {
-    return { ...defaultChatConfig, ...JSON.parse(stored) };
+    return normalizeConfig(JSON.parse(stored));
   } catch {
     return defaultChatConfig;
   }
@@ -64,6 +82,13 @@ export function AdminClient() {
     window.localStorage.setItem(chatConfigStorageKey, JSON.stringify(config));
     window.dispatchEvent(new Event("xa-chat-config-updated"));
     setSavedAt(new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }));
+  }
+
+  function resetConfig() {
+    setConfig(defaultChatConfig);
+    window.localStorage.removeItem(chatConfigStorageKey);
+    window.dispatchEvent(new Event("xa-chat-config-updated"));
+    setSavedAt(null);
   }
 
   return (
@@ -132,6 +157,26 @@ export function AdminClient() {
         </label>
       </article>
 
+      <article className="settings-card wide">
+        <h2>Suggested prompts</h2>
+        <label>
+          One prompt per line
+          <textarea
+            value={config.quickPrompts.join("\n")}
+            onChange={(event) =>
+              updateConfig(
+                "quickPrompts",
+                event.target.value
+                  .split("\n")
+                  .map((prompt) => prompt.trim())
+                  .filter(Boolean)
+                  .slice(0, 8),
+              )
+            }
+          />
+        </label>
+      </article>
+
       <article className="settings-card">
         <h2>Fallback routing</h2>
         <label>
@@ -147,6 +192,9 @@ export function AdminClient() {
           <a className="button button-secondary" href="/user">
             Preview
           </a>
+          <button className="button button-secondary" type="button" onClick={resetConfig}>
+            Reset
+          </button>
           <button className="button button-primary" type="submit">
             Publish
           </button>
