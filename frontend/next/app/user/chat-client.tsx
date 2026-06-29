@@ -4,9 +4,11 @@ import { type CSSProperties, FormEvent, useEffect, useMemo, useState } from "rea
 import {
   ChatConfig,
   ChatLead,
+  ChatRating,
   chatConfigStorageKey,
   chatHistoryStorageKey,
   chatLeadsStorageKey,
+  chatRatingsStorageKey,
   defaultChatConfig,
 } from "../admin/admin-client";
 
@@ -36,6 +38,7 @@ export function ChatClient() {
   const [copied, setCopied] = useState(false);
   const [lead, setLead] = useState<ChatLead>({ name: "", email: "", note: "", createdAt: "" });
   const [leadSaved, setLeadSaved] = useState(false);
+  const [ratingSaved, setRatingSaved] = useState<ChatRating["score"] | null>(null);
 
   useEffect(() => {
     const loadConfig = () => {
@@ -218,6 +221,27 @@ export function ChatClient() {
     window.setTimeout(() => setLeadSaved(false), 1800);
   }
 
+  function saveRating(score: ChatRating["score"]) {
+    const nextRating: ChatRating = {
+      score,
+      note: messages.filter((message) => message.role === "user").at(-1)?.content ?? "",
+      createdAt: new Date().toISOString(),
+    };
+    const stored = window.localStorage.getItem(chatRatingsStorageKey);
+    let ratings: ChatRating[] = [];
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        ratings = Array.isArray(parsed) ? parsed : [];
+      } catch {
+        ratings = [];
+      }
+    }
+    window.localStorage.setItem(chatRatingsStorageKey, JSON.stringify([...ratings, nextRating].slice(-50)));
+    setRatingSaved(score);
+    window.setTimeout(() => setRatingSaved(null), 1800);
+  }
+
   const accentStyle = {
     "--accent": accentStyles[config.accentColor].accent,
     "--accent-strong": accentStyles[config.accentColor].accentStrong,
@@ -299,6 +323,16 @@ export function ChatClient() {
           Contact support
         </a>
       </aside>
+
+      <div className="rating-row" aria-label="Rate this chat">
+        <span>{ratingSaved ? "Feedback saved" : "Was this helpful?"}</span>
+        <button type="button" onClick={() => saveRating("up")}>
+          Yes
+        </button>
+        <button type="button" onClick={() => saveRating("down")}>
+          No
+        </button>
+      </div>
 
       <form className="composer" onSubmit={handleSubmit}>
         <label className="sr-only" htmlFor="chat-message">

@@ -25,9 +25,16 @@ export type ChatLead = {
   createdAt: string;
 };
 
+export type ChatRating = {
+  score: "up" | "down";
+  note: string;
+  createdAt: string;
+};
+
 export const chatConfigStorageKey = "xa-chat-config";
 export const chatLeadsStorageKey = "xa-chat-leads";
 export const chatHistoryStorageKey = "xa-chat-history";
+export const chatRatingsStorageKey = "xa-chat-ratings";
 
 export const defaultChatConfig: ChatConfig = {
   brandName: "XA",
@@ -57,6 +64,51 @@ const accentOptions: { label: string; value: ChatConfig["accentColor"] }[] = [
   { label: "Blue", value: "blue" },
   { label: "Rose", value: "rose" },
   { label: "Graphite", value: "graphite" },
+];
+
+const configTemplates: { label: string; config: Partial<ChatConfig> }[] = [
+  {
+    label: "Sales",
+    config: {
+      tone: "Helpful",
+      accentColor: "teal",
+      greeting: "Hi, I can help with pricing, demos, and next steps.",
+      quickPrompts: ["Pricing", "Book a demo", "Compare options", "Talk to sales"],
+      faqItems: [
+        "Pricing: Pricing depends on scope and starts after a discovery call.",
+        "Demo: Visitors can request a demo with their preferred time and contact details.",
+        "Sales: A specialist can help compare options and prepare next steps.",
+      ],
+    },
+  },
+  {
+    label: "Support",
+    config: {
+      tone: "Professional",
+      accentColor: "blue",
+      greeting: "Hi, I can help route support issues and gather the right details.",
+      quickPrompts: ["Report an issue", "Contact support", "Check status", "Escalate"],
+      faqItems: [
+        "Support: Include the issue, timeline, account details, and best contact method.",
+        "Escalation: Urgent issues should be routed to the handoff email.",
+        "Status: Ask for the ticket or request details before giving a status answer.",
+      ],
+    },
+  },
+  {
+    label: "Concierge",
+    config: {
+      tone: "Concise",
+      accentColor: "graphite",
+      greeting: "Welcome. Tell me what you need and I will route it cleanly.",
+      quickPrompts: ["Start a request", "Book time", "Ask a question", "Need a human"],
+      faqItems: [
+        "Requests: Start with the desired outcome, timeline, and contact details.",
+        "Booking: A human can follow up after the visitor shares preferred times.",
+        "Human handoff: Route visitors to the handoff email when a request needs judgment.",
+      ],
+    },
+  },
 ];
 
 function normalizeConfig(value: Partial<ChatConfig>): ChatConfig {
@@ -127,6 +179,7 @@ export function AdminClient() {
     model: string;
   } | null>(null);
   const [leads, setLeads] = useState<ChatLead[]>([]);
+  const [ratings, setRatings] = useState<ChatRating[]>([]);
   const [messageCount, setMessageCount] = useState(0);
   const [importText, setImportText] = useState("");
   const [importError, setImportError] = useState<string | null>(null);
@@ -155,6 +208,15 @@ export function AdminClient() {
         setMessageCount(Array.isArray(parsed) ? parsed.length : 0);
       } catch {
         setMessageCount(0);
+      }
+    }
+    const storedRatings = window.localStorage.getItem(chatRatingsStorageKey);
+    if (storedRatings) {
+      try {
+        const parsed = JSON.parse(storedRatings);
+        setRatings(Array.isArray(parsed) ? parsed.slice(-20) : []);
+      } catch {
+        setRatings([]);
       }
     }
     fetch("/api/health")
@@ -202,6 +264,12 @@ export function AdminClient() {
     window.localStorage.removeItem(chatConfigStorageKey);
     window.dispatchEvent(new Event("xa-chat-config-updated"));
     setSavedAt(null);
+  }
+
+  function applyTemplate(template: Partial<ChatConfig>) {
+    const nextConfig = normalizeConfig({ ...config, ...template });
+    setConfig(nextConfig);
+    setSavedAt("template applied");
   }
 
   function exportConfig() {
@@ -309,6 +377,13 @@ export function AdminClient() {
 
       <article className="settings-card">
         <h2>Experience</h2>
+        <div className="template-row" aria-label="Templates">
+          {configTemplates.map((template) => (
+            <button type="button" key={template.label} onClick={() => applyTemplate(template.config)}>
+              {template.label}
+            </button>
+          ))}
+        </div>
         <div className="segmented" aria-label="Tone options">
           {toneOptions.map((option) => (
             <button
@@ -466,6 +541,14 @@ export function AdminClient() {
           <div>
             <strong>{config.faqItems.length}</strong>
             <span>snippets</span>
+          </div>
+          <div>
+            <strong>{ratings.filter((rating) => rating.score === "up").length}</strong>
+            <span>upvotes</span>
+          </div>
+          <div>
+            <strong>{ratings.filter((rating) => rating.score === "down").length}</strong>
+            <span>downvotes</span>
           </div>
         </div>
         <button className="button button-secondary" type="button" onClick={exportTranscript}>

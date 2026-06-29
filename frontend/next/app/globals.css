@@ -321,6 +321,20 @@ textarea {
   font-size: 0.92rem;
 }
 
+.rating-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-top: 1px solid var(--line);
+  padding: 12px 24px;
+}
+
+.rating-row span {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 750;
+}
+
 .large-textarea {
   min-height: 150px;
 }
@@ -571,6 +585,22 @@ textarea {
   gap: 8px;
 }
 
+.template-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.template-row button,
+.rating-row button {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--text);
+  padding: 9px 12px;
+  font-weight: 750;
+}
+
 .segmented button.active {
   border-color: var(--accent);
   background: var(--soft);
@@ -664,5 +694,14 @@ textarea {
 
   .segmented {
     grid-template-columns: 1fr;
+  }
+
+  .template-row {
+    grid-template-columns: 1fr;
+  }
+
+  .rating-row {
+    flex-wrap: wrap;
+    padding: 12px 14px;
   }
 }
