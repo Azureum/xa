@@ -87,6 +87,15 @@ function buildSystemPrompt(config: NormalizedChatConfig) {
 
 function buildFallbackReply(config: NormalizedChatConfig, userMessage: string) {
   const lowerMessage = userMessage.toLowerCase();
+  if (
+    lowerMessage.includes("human") ||
+    lowerMessage.includes("agent") ||
+    lowerMessage.includes("person") ||
+    lowerMessage.includes("representative")
+  ) {
+    return `I can route you to a human. Email ${config.handoffEmail} with a short summary, or leave your contact details in the chat form for follow-up.`;
+  }
+
   const matchingFaq = config.faqItems.find((item) =>
     item
       .toLowerCase()

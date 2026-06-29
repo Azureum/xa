@@ -297,6 +297,30 @@ textarea {
   opacity: 0.65;
 }
 
+.handoff-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-top: 1px solid var(--line);
+  background: #fafafa;
+  padding: 16px 24px;
+}
+
+.handoff-card div {
+  display: grid;
+  gap: 4px;
+}
+
+.handoff-card strong {
+  color: var(--ink);
+}
+
+.handoff-card span {
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
 .large-textarea {
   min-height: 150px;
 }
@@ -334,6 +358,7 @@ textarea {
 }
 
 .config-strip span,
+.config-strip a,
 .config-strip button {
   border: 1px solid var(--line);
   border-radius: 999px;
@@ -582,12 +607,18 @@ textarea {
 
   .chat-header,
   .composer,
-  .lead-capture {
+  .lead-capture,
+  .handoff-card {
     grid-template-columns: 1fr;
   }
 
+  .handoff-card {
+    align-items: stretch;
+  }
+
   .composer,
-  .lead-capture {
+  .lead-capture,
+  .handoff-card {
     padding: 14px;
   }
 

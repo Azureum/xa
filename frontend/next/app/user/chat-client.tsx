@@ -187,6 +187,18 @@ export function ChatClient() {
     window.setTimeout(() => setCopied(false), 1600);
   }
 
+  function buildEscalationHref() {
+    const subject = encodeURIComponent(`${config.brandName} chat follow-up`);
+    const body = encodeURIComponent(
+      [
+        "Hi, I need help with this chat request.",
+        "",
+        messages.map((message) => `${message.role.toUpperCase()}: ${message.content}`).join("\n\n"),
+      ].join("\n"),
+    );
+    return `mailto:${config.handoffEmail}?subject=${subject}&body=${body}`;
+  }
+
   function saveLead(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const nextLead = { ...lead, createdAt: new Date().toISOString() };
@@ -234,6 +246,7 @@ export function ChatClient() {
         <span>{config.brandName}</span>
         <span>{config.displayName}</span>
         <span>{config.tone} tone</span>
+        <a href={buildEscalationHref()}>Email support</a>
         <button type="button" onClick={copyTranscript}>
           {copied ? "Copied" : "Copy transcript"}
         </button>
@@ -275,6 +288,16 @@ export function ChatClient() {
           </button>
         </form>
       )}
+
+      <aside className="handoff-card">
+        <div>
+          <strong>Need a human?</strong>
+          <span>Send the transcript to the team or save your details for follow-up.</span>
+        </div>
+        <a className="button button-secondary" href={buildEscalationHref()}>
+          Contact support
+        </a>
+      </aside>
 
       <form className="composer" onSubmit={handleSubmit}>
         <label className="sr-only" htmlFor="chat-message">

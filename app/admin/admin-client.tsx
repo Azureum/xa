@@ -104,6 +104,20 @@ function encodeConfig(config: ChatConfig) {
   return encodeURIComponent(JSON.stringify(config));
 }
 
+function downloadText(filename: string, text: string, type = "text/plain") {
+  const blob = new Blob([text], { type });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+function csvCell(value: string) {
+  return `"${value.replace(/"/g, '""')}"`;
+}
+
 export function AdminClient() {
   const [config, setConfig] = useState<ChatConfig>(defaultChatConfig);
   const [savedAt, setSavedAt] = useState<string | null>(null);
@@ -187,6 +201,29 @@ export function AdminClient() {
   function exportConfig() {
     void navigator.clipboard.writeText(JSON.stringify(config, null, 2));
     setSavedAt("configuration copied");
+  }
+
+  function downloadConfig() {
+    downloadText("xa-chat-config.json", JSON.stringify(config, null, 2), "application/json");
+    setSavedAt("configuration downloaded");
+  }
+
+  function exportLeadsCsv() {
+    const header = ["Name", "Email", "Note", "Created At"];
+    const rows = leads.map((lead) => [lead.name, lead.email, lead.note, lead.createdAt]);
+    const csv = [header, ...rows].map((row) => row.map((cell) => csvCell(cell)).join(",")).join("\n");
+    downloadText("xa-leads.csv", csv, "text/csv");
+    setSavedAt("leads exported");
+  }
+
+  function exportTranscript() {
+    const storedHistory = window.localStorage.getItem(chatHistoryStorageKey);
+    const transcript = storedHistory ? JSON.parse(storedHistory) : [];
+    const text = Array.isArray(transcript)
+      ? transcript.map((message) => `${String(message.role ?? "message").toUpperCase()}: ${String(message.content ?? "")}`).join("\n\n")
+      : "";
+    downloadText("xa-transcript.txt", text || "No transcript is saved in this browser.");
+    setSavedAt("transcript exported");
   }
 
   function importConfig() {
@@ -367,6 +404,9 @@ export function AdminClient() {
             </div>
           ))}
         </div>
+        <button className="button button-secondary" type="button" onClick={exportLeadsCsv} disabled={!leads.length}>
+          Export leads CSV
+        </button>
       </article>
 
       <article className="settings-card">
@@ -385,6 +425,9 @@ export function AdminClient() {
             <span>snippets</span>
           </div>
         </div>
+        <button className="button button-secondary" type="button" onClick={exportTranscript}>
+          Export transcript
+        </button>
       </article>
 
       <article className="settings-card wide">
@@ -392,6 +435,9 @@ export function AdminClient() {
         <div className="actions compact">
           <button className="button button-secondary" type="button" onClick={exportConfig}>
             Copy config JSON
+          </button>
+          <button className="button button-secondary" type="button" onClick={downloadConfig}>
+            Download config
           </button>
           <button className="button button-primary" type="button" onClick={importConfig}>
             Import config
