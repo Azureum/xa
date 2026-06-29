@@ -151,12 +151,16 @@ h1 {
 .chat-shell {
   min-height: calc(100vh - 128px);
   display: grid;
-  grid-template-rows: auto 1fr auto auto;
+  grid-template-rows: auto 1fr auto auto auto auto;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--panel);
   overflow: hidden;
   box-shadow: 0 22px 70px rgb(17 24 39 / 10%);
+}
+
+.chat-client {
+  display: contents;
 }
 
 .chat-header {
@@ -261,6 +265,38 @@ textarea {
   resize: vertical;
 }
 
+.lead-capture {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.4fr auto;
+  gap: 12px;
+  border-top: 1px solid var(--line);
+  padding: 16px 24px;
+}
+
+.lead-capture label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.lead-capture button {
+  align-self: end;
+  min-height: 43px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  padding: 0 16px;
+  font-weight: 800;
+}
+
+.lead-capture button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
 .large-textarea {
   min-height: 150px;
 }
@@ -343,6 +379,73 @@ textarea {
   border-color: rgb(179 67 47 / 24%);
   background: #fff7ed;
   color: var(--danger);
+}
+
+.swatch-row {
+  display: flex;
+  gap: 10px;
+}
+
+.swatch {
+  width: 36px;
+  height: 36px;
+  border: 2px solid transparent;
+  border-radius: 999px;
+}
+
+.swatch.active {
+  border-color: var(--ink);
+}
+
+.swatch-teal {
+  background: #0f766e;
+}
+
+.swatch-blue {
+  background: #2563eb;
+}
+
+.swatch-rose {
+  background: #be123c;
+}
+
+.swatch-graphite {
+  background: #374151;
+}
+
+.small-copy {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.lead-list {
+  display: grid;
+  gap: 8px;
+}
+
+.lead-list div {
+  display: grid;
+  gap: 3px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.lead-list strong,
+.lead-list span {
+  overflow-wrap: anywhere;
+}
+
+.lead-list span {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.inline-error {
+  border-top: 0;
+  padding: 0;
 }
 
 .admin-heading {
@@ -454,11 +557,13 @@ textarea {
   }
 
   .chat-header,
-  .composer {
+  .composer,
+  .lead-capture {
     grid-template-columns: 1fr;
   }
 
-  .composer {
+  .composer,
+  .lead-capture {
     padding: 14px;
   }
 

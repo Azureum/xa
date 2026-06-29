@@ -1,7 +1,13 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
-import { ChatConfig, chatConfigStorageKey, defaultChatConfig } from "../admin/admin-client";
+import { type CSSProperties, FormEvent, useEffect, useMemo, useState } from "react";
+import {
+  ChatConfig,
+  ChatLead,
+  chatConfigStorageKey,
+  chatLeadsStorageKey,
+  defaultChatConfig,
+} from "../admin/admin-client";
 
 type ChatMessage = {
   role: "user" | "assistant";
@@ -10,6 +16,16 @@ type ChatMessage = {
 };
 
 const chatHistoryStorageKey = "xa-chat-history";
+const accentStyles: Record<ChatConfig["accentColor"], { accent: string; accentStrong: string; soft: string }> = {
+  teal: { accent: "#0f766e", accentStrong: "#115e59", soft: "#edf7f4" },
+  blue: { accent: "#2563eb", accentStrong: "#1d4ed8", soft: "#eff6ff" },
+  rose: { accent: "#be123c", accentStrong: "#9f1239", soft: "#fff1f2" },
+  graphite: { accent: "#374151", accentStrong: "#111827", soft: "#f3f4f6" },
+};
+
+function decodeConfig(value: string) {
+  return JSON.parse(value);
+}
 
 export function ChatClient() {
   const [messages, setMessages] = useState<ChatMessage[]>([{ role: "assistant", content: defaultChatConfig.greeting }]);
@@ -18,9 +34,33 @@ export function ChatClient() {
   const [error, setError] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [lead, setLead] = useState<ChatLead>({ name: "", email: "", note: "", createdAt: "" });
+  const [leadSaved, setLeadSaved] = useState(false);
 
   useEffect(() => {
     const loadConfig = () => {
+      const configParam = new URLSearchParams(window.location.search).get("config");
+      if (configParam) {
+        try {
+          const parsed = decodeConfig(configParam);
+          const nextConfig = {
+            ...defaultChatConfig,
+            ...parsed,
+            accentColor: parsed.accentColor ?? defaultChatConfig.accentColor,
+            quickPrompts: Array.isArray(parsed.quickPrompts) ? parsed.quickPrompts : defaultChatConfig.quickPrompts,
+          };
+          const greetingMessages = [{ role: "assistant" as const, content: nextConfig.greeting }];
+          window.localStorage.setItem(chatConfigStorageKey, JSON.stringify(nextConfig));
+          window.localStorage.setItem(chatHistoryStorageKey, JSON.stringify(greetingMessages));
+          setConfig(nextConfig);
+          setMessages(greetingMessages);
+          window.history.replaceState(null, "", window.location.pathname);
+          return;
+        } catch {
+          window.history.replaceState(null, "", window.location.pathname);
+        }
+      }
+
       const stored = window.localStorage.getItem(chatConfigStorageKey);
       if (!stored) {
         setConfig(defaultChatConfig);
@@ -33,6 +73,7 @@ export function ChatClient() {
         const nextConfig = {
           ...defaultChatConfig,
           ...parsed,
+          accentColor: parsed.accentColor ?? defaultChatConfig.accentColor,
           quickPrompts: Array.isArray(parsed.quickPrompts) ? parsed.quickPrompts : defaultChatConfig.quickPrompts,
         };
         setConfig(nextConfig);
@@ -144,13 +185,40 @@ export function ChatClient() {
     window.setTimeout(() => setCopied(false), 1600);
   }
 
+  function saveLead(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const nextLead = { ...lead, createdAt: new Date().toISOString() };
+    const stored = window.localStorage.getItem(chatLeadsStorageKey);
+    let leads: ChatLead[] = [];
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        leads = Array.isArray(parsed) ? parsed : [];
+      } catch {
+        leads = [];
+      }
+    }
+    window.localStorage.setItem(chatLeadsStorageKey, JSON.stringify([...leads, nextLead].slice(-50)));
+    setLead({ name: "", email: "", note: "", createdAt: "" });
+    setLeadSaved(true);
+    window.setTimeout(() => setLeadSaved(false), 1800);
+  }
+
+  const accentStyle = {
+    "--accent": accentStyles[config.accentColor].accent,
+    "--accent-strong": accentStyles[config.accentColor].accentStrong,
+    "--soft": accentStyles[config.accentColor].soft,
+  } as CSSProperties;
+
   return (
-    <>
+    <div className="chat-client" style={accentStyle}>
       <div className="message-list" aria-label="Conversation">
         {messages.map((message, index) => (
           <div className={`message-row ${message.role}`} key={`${message.role}-${index}`}>
             <p>{message.content}</p>
-            {message.provider && <span>{message.provider === "openrouter" ? "OpenRouter" : "Fallback"}</span>}
+            {config.showProviderLabels && message.provider && (
+              <span>{message.provider === "openrouter" ? "OpenRouter" : "Fallback"}</span>
+            )}
           </div>
         ))}
         {isSending && (
@@ -161,6 +229,7 @@ export function ChatClient() {
       </div>
 
       <div className="config-strip">
+        <span>{config.brandName}</span>
         <span>{config.displayName}</span>
         <span>{config.tone} tone</span>
         <button type="button" onClick={copyTranscript}>
@@ -181,6 +250,30 @@ export function ChatClient() {
 
       {error && <p className="chat-error">{error}</p>}
 
+      {config.collectLeadDetails && (
+        <form className="lead-capture" onSubmit={saveLead}>
+          <label>
+            Name
+            <input value={lead.name} onChange={(event) => setLead((current) => ({ ...current, name: event.target.value }))} />
+          </label>
+          <label>
+            Email
+            <input
+              type="email"
+              value={lead.email}
+              onChange={(event) => setLead((current) => ({ ...current, email: event.target.value }))}
+            />
+          </label>
+          <label className="lead-note">
+            Note
+            <input value={lead.note} onChange={(event) => setLead((current) => ({ ...current, note: event.target.value }))} />
+          </label>
+          <button type="submit" disabled={!lead.name.trim() && !lead.email.trim() && !lead.note.trim()}>
+            {leadSaved ? "Saved" : "Save lead"}
+          </button>
+        </form>
+      )}
+
       <form className="composer" onSubmit={handleSubmit}>
         <label className="sr-only" htmlFor="chat-message">
           Message
@@ -195,6 +288,6 @@ export function ChatClient() {
           {isSending ? "Sending" : "Send"}
         </button>
       </form>
-    </>
+    </div>
   );
 }
