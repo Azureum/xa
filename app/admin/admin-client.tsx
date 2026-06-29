@@ -15,6 +15,7 @@ export type ChatConfig = {
   showProviderLabels: boolean;
   handoffEmail: string;
   quickPrompts: string[];
+  faqItems: string[];
 };
 
 export type ChatLead = {
@@ -26,6 +27,7 @@ export type ChatLead = {
 
 export const chatConfigStorageKey = "xa-chat-config";
 export const chatLeadsStorageKey = "xa-chat-leads";
+export const chatHistoryStorageKey = "xa-chat-history";
 
 export const defaultChatConfig: ChatConfig = {
   brandName: "XA",
@@ -42,6 +44,11 @@ export const defaultChatConfig: ChatConfig = {
   showProviderLabels: true,
   handoffEmail: "support@example.com",
   quickPrompts: ["Pricing", "Book a demo", "Support", "Hours"],
+  faqItems: [
+    "Pricing: Pricing starts after a discovery call and depends on scope.",
+    "Support: Support requests should include the issue, timeline, and best contact method.",
+    "Booking: Visitors can request a demo or discovery call through the chat.",
+  ],
 };
 
 const toneOptions: ChatConfig["tone"][] = ["Helpful", "Concise", "Professional"];
@@ -62,6 +69,9 @@ function normalizeConfig(value: Partial<ChatConfig>): ChatConfig {
   const quickPrompts = Array.isArray(value.quickPrompts)
     ? value.quickPrompts.filter((prompt) => typeof prompt === "string" && prompt.trim()).slice(0, 8)
     : defaultChatConfig.quickPrompts;
+  const faqItems = Array.isArray(value.faqItems)
+    ? value.faqItems.filter((item) => typeof item === "string" && item.trim()).slice(0, 12)
+    : defaultChatConfig.faqItems;
 
   return {
     ...defaultChatConfig,
@@ -69,6 +79,7 @@ function normalizeConfig(value: Partial<ChatConfig>): ChatConfig {
     tone,
     accentColor,
     quickPrompts,
+    faqItems,
   };
 }
 
@@ -102,6 +113,7 @@ export function AdminClient() {
     model: string;
   } | null>(null);
   const [leads, setLeads] = useState<ChatLead[]>([]);
+  const [messageCount, setMessageCount] = useState(0);
   const [importText, setImportText] = useState("");
   const [importError, setImportError] = useState<string | null>(null);
 
@@ -114,6 +126,15 @@ export function AdminClient() {
         setLeads(Array.isArray(parsed) ? parsed.slice(-12) : []);
       } catch {
         setLeads([]);
+      }
+    }
+    const storedHistory = window.localStorage.getItem(chatHistoryStorageKey);
+    if (storedHistory) {
+      try {
+        const parsed = JSON.parse(storedHistory);
+        setMessageCount(Array.isArray(parsed) ? parsed.length : 0);
+      } catch {
+        setMessageCount(0);
       }
     }
     fetch("/api/health")
@@ -139,6 +160,10 @@ export function AdminClient() {
       quickPrompts: String(formData.get("quickPrompts") ?? "")
         .split("\n")
         .map((prompt) => prompt.trim())
+        .filter(Boolean),
+      faqItems: String(formData.get("faqItems") ?? "")
+        .split("\n")
+        .map((item) => item.trim())
         .filter(Boolean),
     });
   }
@@ -297,6 +322,28 @@ export function AdminClient() {
         </label>
       </article>
 
+      <article className="settings-card wide">
+        <h2>Knowledge snippets</h2>
+        <label>
+          One snippet per line
+          <textarea
+            name="faqItems"
+            className="large-textarea"
+            value={config.faqItems.join("\n")}
+            onChange={(event) =>
+              updateConfig(
+                "faqItems",
+                event.target.value
+                  .split("\n")
+                  .map((item) => item.trim())
+                  .filter(Boolean)
+                  .slice(0, 12),
+              )
+            }
+          />
+        </label>
+      </article>
+
       <article className="settings-card">
         <h2>Fallback routing</h2>
         <label>
@@ -319,6 +366,24 @@ export function AdminClient() {
               <span>{lead.email || "No email"}</span>
             </div>
           ))}
+        </div>
+      </article>
+
+      <article className="settings-card">
+        <h2>Activity</h2>
+        <div className="metric-grid">
+          <div>
+            <strong>{messageCount}</strong>
+            <span>messages</span>
+          </div>
+          <div>
+            <strong>{leads.length}</strong>
+            <span>leads</span>
+          </div>
+          <div>
+            <strong>{config.faqItems.length}</strong>
+            <span>snippets</span>
+          </div>
         </div>
       </article>
 

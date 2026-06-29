@@ -11,6 +11,7 @@ type ChatConfig = {
   askClarifyingQuestions?: unknown;
   collectLeadDetails?: unknown;
   handoffEmail?: unknown;
+  faqItems?: unknown;
 };
 
 const defaultSystemPrompt =
@@ -24,6 +25,7 @@ type NormalizedChatConfig = {
   handoffEmail: string;
   askClarifyingQuestions: boolean;
   collectLeadDetails: boolean;
+  faqItems: string[];
 };
 
 function isChatMessage(value: unknown): value is ChatMessage {
@@ -48,6 +50,10 @@ function cleanText(value: unknown, fallback: string, maxLength: number) {
 }
 
 function normalizeConfig(config: ChatConfig | undefined): NormalizedChatConfig {
+  const faqItems = Array.isArray(config?.faqItems)
+    ? config.faqItems.filter((item): item is string => typeof item === "string" && Boolean(item.trim())).slice(0, 12)
+    : [];
+
   return {
     displayName: cleanText(config?.displayName, "XA Assistant", 80),
     instructions: cleanText(config?.systemPrompt, defaultSystemPrompt, 1200),
@@ -56,6 +62,7 @@ function normalizeConfig(config: ChatConfig | undefined): NormalizedChatConfig {
     handoffEmail: cleanText(config?.handoffEmail, "support@example.com", 160),
     askClarifyingQuestions: config?.askClarifyingQuestions !== false,
     collectLeadDetails: config?.collectLeadDetails !== false,
+    faqItems,
   };
 }
 
@@ -65,6 +72,7 @@ function buildSystemPrompt(config: NormalizedChatConfig) {
     `Tone: ${config.tone}.`,
     config.instructions,
     config.businessContext ? `Business context: ${config.businessContext}` : "",
+    config.faqItems.length ? `Approved knowledge snippets:\n${config.faqItems.map((item) => `- ${item}`).join("\n")}` : "",
     config.askClarifyingQuestions
       ? "Ask one clarifying question when the request is ambiguous."
       : "Avoid clarifying questions unless required.",
@@ -79,6 +87,17 @@ function buildSystemPrompt(config: NormalizedChatConfig) {
 
 function buildFallbackReply(config: NormalizedChatConfig, userMessage: string) {
   const lowerMessage = userMessage.toLowerCase();
+  const matchingFaq = config.faqItems.find((item) =>
+    item
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .filter((word) => word.length > 3)
+      .some((word) => lowerMessage.includes(word)),
+  );
+  if (matchingFaq) {
+    return `${matchingFaq} ${config.collectLeadDetails ? "Share your contact details if you want a follow-up." : `For follow-up, contact ${config.handoffEmail}.`}`;
+  }
+
   const contextSentence = config.businessContext
     ? `Based on the current admin context: ${config.businessContext}`
     : "The admin has not added business-specific context yet.";

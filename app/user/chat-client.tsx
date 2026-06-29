@@ -5,6 +5,7 @@ import {
   ChatConfig,
   ChatLead,
   chatConfigStorageKey,
+  chatHistoryStorageKey,
   chatLeadsStorageKey,
   defaultChatConfig,
 } from "../admin/admin-client";
@@ -15,7 +16,6 @@ type ChatMessage = {
   provider?: "openrouter" | "fallback";
 };
 
-const chatHistoryStorageKey = "xa-chat-history";
 const accentStyles: Record<ChatConfig["accentColor"], { accent: string; accentStrong: string; soft: string }> = {
   teal: { accent: "#0f766e", accentStrong: "#115e59", soft: "#edf7f4" },
   blue: { accent: "#2563eb", accentStrong: "#1d4ed8", soft: "#eff6ff" },
@@ -48,6 +48,7 @@ export function ChatClient() {
             ...parsed,
             accentColor: parsed.accentColor ?? defaultChatConfig.accentColor,
             quickPrompts: Array.isArray(parsed.quickPrompts) ? parsed.quickPrompts : defaultChatConfig.quickPrompts,
+            faqItems: Array.isArray(parsed.faqItems) ? parsed.faqItems : defaultChatConfig.faqItems,
           };
           const greetingMessages = [{ role: "assistant" as const, content: nextConfig.greeting }];
           window.localStorage.setItem(chatConfigStorageKey, JSON.stringify(nextConfig));
@@ -75,6 +76,7 @@ export function ChatClient() {
           ...parsed,
           accentColor: parsed.accentColor ?? defaultChatConfig.accentColor,
           quickPrompts: Array.isArray(parsed.quickPrompts) ? parsed.quickPrompts : defaultChatConfig.quickPrompts,
+          faqItems: Array.isArray(parsed.faqItems) ? parsed.faqItems : defaultChatConfig.faqItems,
         };
         setConfig(nextConfig);
         setMessages((current) => (current.length ? current : [{ role: "assistant", content: nextConfig.greeting }]));

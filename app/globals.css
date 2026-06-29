@@ -443,6 +443,30 @@ textarea {
   font-size: 0.88rem;
 }
 
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.metric-grid div {
+  display: grid;
+  gap: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.metric-grid strong {
+  font-size: 1.4rem;
+}
+
+.metric-grid span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
 .inline-error {
   border-top: 0;
   padding: 0;
