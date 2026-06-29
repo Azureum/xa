@@ -352,6 +352,8 @@ export function AdminClient() {
   }
 
   const previewHref = `/user?config=${encodeConfig(config)}`;
+  const embedHref = `/embed?config=${encodeConfig(config)}`;
+  const embedSnippet = `<iframe src="${typeof window === "undefined" ? "" : window.location.origin}${embedHref}" title="${config.brandName} chatbot" width="420" height="720" style="border:0;border-radius:8px;max-width:100%;"></iframe>`;
 
   return (
     <form className="settings-grid" onSubmit={handleSubmit}>
@@ -593,6 +595,29 @@ export function AdminClient() {
           <textarea name="importText" value={importText} onChange={(event) => setImportText(event.target.value)} />
         </label>
         {importError && <p className="chat-error inline-error">{importError}</p>}
+      </article>
+
+      <article className="settings-card wide">
+        <h2>Install widget</h2>
+        <div className="actions compact">
+          <a className="button button-secondary" href={embedHref}>
+            Open embed
+          </a>
+          <button
+            className="button button-primary"
+            type="button"
+            onClick={() => {
+              void navigator.clipboard.writeText(embedSnippet);
+              setSavedAt("embed code copied");
+            }}
+          >
+            Copy embed code
+          </button>
+        </div>
+        <label>
+          Iframe snippet
+          <textarea className="code-textarea" readOnly value={embedSnippet} />
+        </label>
       </article>
 
       <article className="settings-card publish-card">
