@@ -353,7 +353,26 @@ export function AdminClient() {
 
   const previewHref = `/user?config=${encodeConfig(config)}`;
   const embedHref = `/embed?config=${encodeConfig(config)}`;
-  const embedSnippet = `<iframe src="${typeof window === "undefined" ? "" : window.location.origin}${embedHref}" title="${config.brandName} chatbot" width="420" height="720" style="border:0;border-radius:8px;max-width:100%;"></iframe>`;
+  const siteOrigin = typeof window === "undefined" ? "" : window.location.origin;
+  const embedUrl = `${siteOrigin}${embedHref}`;
+  const embedSnippet = `<iframe src="${embedUrl}" title="${config.brandName} chatbot" width="420" height="720" style="border:0;border-radius:8px;max-width:100%;"></iframe>`;
+  const launcherSnippet = `<script>
+(function () {
+  var frameUrl = "${embedUrl}";
+  var button = document.createElement("button");
+  var frame = document.createElement("iframe");
+  button.textContent = "${config.brandName} chat";
+  button.style.cssText = "position:fixed;right:20px;bottom:20px;z-index:9999;border:0;border-radius:999px;background:#111827;color:#fff;padding:12px 16px;font:600 14px system-ui;box-shadow:0 12px 30px rgba(0,0,0,.2);";
+  frame.src = frameUrl;
+  frame.title = "${config.brandName} chatbot";
+  frame.style.cssText = "position:fixed;right:20px;bottom:76px;width:min(420px,calc(100vw - 32px));height:min(720px,calc(100vh - 112px));z-index:9999;border:0;border-radius:8px;box-shadow:0 24px 70px rgba(0,0,0,.24);display:none;background:#fff;";
+  button.onclick = function () {
+    frame.style.display = frame.style.display === "none" ? "block" : "none";
+  };
+  document.body.appendChild(frame);
+  document.body.appendChild(button);
+})();
+</script>`;
 
   return (
     <form className="settings-grid" onSubmit={handleSubmit}>
@@ -613,10 +632,24 @@ export function AdminClient() {
           >
             Copy embed code
           </button>
+          <button
+            className="button button-secondary"
+            type="button"
+            onClick={() => {
+              void navigator.clipboard.writeText(launcherSnippet);
+              setSavedAt("launcher code copied");
+            }}
+          >
+            Copy launcher code
+          </button>
         </div>
         <label>
           Iframe snippet
           <textarea className="code-textarea" readOnly value={embedSnippet} />
+        </label>
+        <label>
+          Floating launcher snippet
+          <textarea className="code-textarea large-code-textarea" readOnly value={launcherSnippet} />
         </label>
       </article>
 

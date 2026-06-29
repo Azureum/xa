@@ -366,6 +366,10 @@ textarea {
   font-size: 0.86rem;
 }
 
+.large-code-textarea {
+  min-height: 220px;
+}
+
 .composer button,
 .settings-card > .button {
   border: 0;
