@@ -1,0 +1,122 @@
+"use client";
+
+import { FormEvent, useMemo, useState } from "react";
+
+type ChatMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
+const initialMessages: ChatMessage[] = [
+  {
+    role: "assistant",
+    content: "Hi, I am XA. Ask me about hours, services, pricing, or next steps.",
+  },
+];
+
+const quickPrompts = ["Pricing", "Book a demo", "Support", "Hours"];
+
+export function ChatClient() {
+  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
+  const [draft, setDraft] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isSending, setIsSending] = useState(false);
+
+  const apiMessages = useMemo(
+    () =>
+      messages.map((message) => ({
+        role: message.role,
+        content: message.content,
+      })),
+    [messages],
+  );
+
+  async function sendMessage(content: string) {
+    const trimmed = content.trim();
+    if (!trimmed || isSending) {
+      return;
+    }
+
+    const nextMessages: ChatMessage[] = [...messages, { role: "user", content: trimmed }];
+    setMessages(nextMessages);
+    setDraft("");
+    setError(null);
+    setIsSending(true);
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messages: [...apiMessages, { role: "user", content: trimmed }],
+        }),
+      });
+
+      const payload = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(payload?.error ?? "The chatbot could not respond.");
+      }
+
+      setMessages((current) => [
+        ...current,
+        {
+          role: "assistant",
+          content: payload.reply,
+        },
+      ]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "The chatbot could not respond.");
+    } finally {
+      setIsSending(false);
+    }
+  }
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    void sendMessage(draft);
+  }
+
+  return (
+    <>
+      <div className="message-list" aria-label="Conversation">
+        {messages.map((message, index) => (
+          <div className={`message-row ${message.role}`} key={`${message.role}-${index}`}>
+            <p>{message.content}</p>
+          </div>
+        ))}
+        {isSending && (
+          <div className="message-row assistant">
+            <p>Thinking...</p>
+          </div>
+        )}
+      </div>
+
+      <div className="prompt-row" aria-label="Quick prompts">
+        {quickPrompts.map((prompt) => (
+          <button className="chip" type="button" key={prompt} onClick={() => void sendMessage(prompt)}>
+            {prompt}
+          </button>
+        ))}
+      </div>
+
+      {error && <p className="chat-error">{error}</p>}
+
+      <form className="composer" onSubmit={handleSubmit}>
+        <label className="sr-only" htmlFor="chat-message">
+          Message
+        </label>
+        <input
+          id="chat-message"
+          placeholder="Type your message..."
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+        />
+        <button type="submit" disabled={isSending}>
+          {isSending ? "Sending" : "Send"}
+        </button>
+      </form>
+    </>
+  );
+}

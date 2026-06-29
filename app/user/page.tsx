@@ -1,19 +1,4 @@
-const messages = [
-  {
-    author: "assistant",
-    text: "Hi, I am XA. Ask me about hours, services, pricing, or next steps.",
-  },
-  {
-    author: "user",
-    text: "Can you help me choose the right plan?",
-  },
-  {
-    author: "assistant",
-    text: "Yes. Tell me your goal and expected volume, and I will suggest a setup.",
-  },
-];
-
-const quickPrompts = ["Pricing", "Book a demo", "Support", "Hours"];
+import { ChatClient } from "./chat-client";
 
 export default function UserChatPage() {
   return (
@@ -36,29 +21,7 @@ export default function UserChatPage() {
           <span className="status-pill">Online</span>
         </div>
 
-        <div className="message-list" aria-label="Conversation preview">
-          {messages.map((message, index) => (
-            <div className={`message-row ${message.author}`} key={`${message.author}-${index}`}>
-              <p>{message.text}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className="prompt-row" aria-label="Quick prompts">
-          {quickPrompts.map((prompt) => (
-            <button className="chip" type="button" key={prompt}>
-              {prompt}
-            </button>
-          ))}
-        </div>
-
-        <form className="composer">
-          <label className="sr-only" htmlFor="chat-message">
-            Message
-          </label>
-          <input id="chat-message" placeholder="Type your message..." />
-          <button type="submit">Send</button>
-        </form>
+        <ChatClient />
       </section>
     </main>
   );
