@@ -1,6 +1,7 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import { ChatConfig, chatConfigStorageKey, defaultChatConfig } from "../admin/admin-client";
 
 type ChatMessage = {
   role: "user" | "assistant";
@@ -18,9 +19,37 @@ const quickPrompts = ["Pricing", "Book a demo", "Support", "Hours"];
 
 export function ChatClient() {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
+  const [config, setConfig] = useState<ChatConfig>(defaultChatConfig);
   const [draft, setDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
+
+  useEffect(() => {
+    const loadConfig = () => {
+      const stored = window.localStorage.getItem(chatConfigStorageKey);
+      if (!stored) {
+        setConfig(defaultChatConfig);
+        setMessages([{ role: "assistant", content: defaultChatConfig.greeting }]);
+        return;
+      }
+
+      try {
+        const nextConfig = { ...defaultChatConfig, ...JSON.parse(stored) };
+        setConfig(nextConfig);
+        setMessages([{ role: "assistant", content: nextConfig.greeting }]);
+      } catch {
+        setConfig(defaultChatConfig);
+      }
+    };
+
+    loadConfig();
+    window.addEventListener("storage", loadConfig);
+    window.addEventListener("xa-chat-config-updated", loadConfig);
+    return () => {
+      window.removeEventListener("storage", loadConfig);
+      window.removeEventListener("xa-chat-config-updated", loadConfig);
+    };
+  }, []);
 
   const apiMessages = useMemo(
     () =>
@@ -51,6 +80,7 @@ export function ChatClient() {
         },
         body: JSON.stringify({
           messages: [...apiMessages, { role: "user", content: trimmed }],
+          config,
         }),
       });
 
@@ -91,6 +121,11 @@ export function ChatClient() {
             <p>Thinking...</p>
           </div>
         )}
+      </div>
+
+      <div className="config-strip">
+        <span>{config.displayName}</span>
+        <span>{config.tone} tone</span>
       </div>
 
       <div className="prompt-row" aria-label="Quick prompts">

@@ -1,10 +1,20 @@
 type ChatMessage = {
-  role: "system" | "user" | "assistant";
+  role: "user" | "assistant";
   content: string;
 };
 
-const systemPrompt =
-  "You are XA Assistant, a concise and helpful customer-facing chatbot. Answer clearly, ask one useful follow-up question when needed, and do not invent business-specific facts.";
+type ChatConfig = {
+  displayName?: unknown;
+  systemPrompt?: unknown;
+  businessContext?: unknown;
+  tone?: unknown;
+  askClarifyingQuestions?: unknown;
+  collectLeadDetails?: unknown;
+  handoffEmail?: unknown;
+};
+
+const defaultSystemPrompt =
+  "You are XA Assistant, a customer-facing chatbot. Answer clearly, stay concise, and do not invent business-specific facts.";
 
 function isChatMessage(value: unknown): value is ChatMessage {
   if (!value || typeof value !== "object") {
@@ -13,9 +23,40 @@ function isChatMessage(value: unknown): value is ChatMessage {
 
   const message = value as Record<string, unknown>;
   return (
-    (message.role === "user" || message.role === "assistant" || message.role === "system") &&
+    (message.role === "user" || message.role === "assistant") &&
     typeof message.content === "string"
   );
+}
+
+function cleanText(value: unknown, fallback: string, maxLength: number) {
+  if (typeof value !== "string") {
+    return fallback;
+  }
+
+  const trimmed = value.trim();
+  return trimmed ? trimmed.slice(0, maxLength) : fallback;
+}
+
+function buildSystemPrompt(config: ChatConfig | undefined) {
+  const displayName = cleanText(config?.displayName, "XA Assistant", 80);
+  const instructions = cleanText(config?.systemPrompt, defaultSystemPrompt, 1200);
+  const businessContext = cleanText(config?.businessContext, "", 2000);
+  const tone = cleanText(config?.tone, "Helpful", 40);
+  const handoffEmail = cleanText(config?.handoffEmail, "support@example.com", 160);
+  const askClarifyingQuestions = config?.askClarifyingQuestions !== false;
+  const collectLeadDetails = config?.collectLeadDetails !== false;
+
+  return [
+    `Assistant name: ${displayName}.`,
+    `Tone: ${tone}.`,
+    instructions,
+    businessContext ? `Business context: ${businessContext}` : "",
+    askClarifyingQuestions ? "Ask one clarifying question when the request is ambiguous." : "Avoid clarifying questions unless required.",
+    collectLeadDetails ? "When a visitor wants follow-up, ask for the minimum useful contact details." : "Do not collect lead details.",
+    `If a human is needed, direct the visitor to ${handoffEmail}.`,
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 export async function POST(request: Request) {
@@ -27,7 +68,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const body = (await request.json().catch(() => null)) as { messages?: unknown } | null;
+  const body = (await request.json().catch(() => null)) as { messages?: unknown; config?: ChatConfig } | null;
   const messages: ChatMessage[] = Array.isArray(body?.messages)
     ? body.messages.filter(isChatMessage)
     : [];
@@ -51,7 +92,7 @@ export async function POST(request: Request) {
     },
     body: JSON.stringify({
       model: process.env.OPENROUTER_MODEL ?? "openrouter/free",
-      messages: [{ role: "system", content: systemPrompt }, ...messages],
+      messages: [{ role: "system", content: buildSystemPrompt(body?.config) }, ...messages],
       temperature: 0.4,
       max_tokens: 450,
     }),

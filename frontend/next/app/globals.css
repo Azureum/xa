@@ -261,6 +261,10 @@ textarea {
   resize: vertical;
 }
 
+.large-textarea {
+  min-height: 150px;
+}
+
 .composer button,
 .settings-card > .button {
   border: 0;
@@ -283,6 +287,23 @@ textarea {
   color: var(--danger);
   padding: 12px 24px 0;
   font-size: 0.92rem;
+}
+
+.config-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-top: 1px solid var(--line);
+  padding: 12px 24px;
+}
+
+.config-strip span {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  padding: 6px 10px;
+  font-size: 0.82rem;
+  font-weight: 750;
 }
 
 .admin-heading {
