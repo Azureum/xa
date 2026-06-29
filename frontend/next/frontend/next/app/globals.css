@@ -297,13 +297,52 @@ textarea {
   padding: 12px 24px;
 }
 
-.config-strip span {
+.config-strip span,
+.config-strip button {
   border: 1px solid var(--line);
   border-radius: 999px;
+  background: var(--panel);
   color: var(--muted);
   padding: 6px 10px;
   font-size: 0.82rem;
   font-weight: 750;
+}
+
+.message-row span {
+  display: inline-flex;
+  margin-top: 8px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 55%);
+  padding: 4px 8px;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.status-stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.status-stack span {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 7px 10px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.status-stack .status-good {
+  border-color: rgb(15 118 110 / 30%);
+  background: var(--soft);
+  color: var(--accent-strong);
+}
+
+.status-stack .status-warn {
+  border-color: rgb(179 67 47 / 24%);
+  background: #fff7ed;
+  color: var(--danger);
 }
 
 .admin-heading {

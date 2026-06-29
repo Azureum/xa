@@ -6,28 +6,25 @@ import { ChatConfig, chatConfigStorageKey, defaultChatConfig } from "../admin/ad
 type ChatMessage = {
   role: "user" | "assistant";
   content: string;
+  provider?: "openrouter" | "fallback";
 };
 
-const initialMessages: ChatMessage[] = [
-  {
-    role: "assistant",
-    content: "Hi, I am XA. Ask me about hours, services, pricing, or next steps.",
-  },
-];
+const chatHistoryStorageKey = "xa-chat-history";
 
 export function ChatClient() {
-  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
+  const [messages, setMessages] = useState<ChatMessage[]>([{ role: "assistant", content: defaultChatConfig.greeting }]);
   const [config, setConfig] = useState<ChatConfig>(defaultChatConfig);
   const [draft, setDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const loadConfig = () => {
       const stored = window.localStorage.getItem(chatConfigStorageKey);
       if (!stored) {
         setConfig(defaultChatConfig);
-        setMessages([{ role: "assistant", content: defaultChatConfig.greeting }]);
+        setMessages((current) => (current.length ? current : [{ role: "assistant", content: defaultChatConfig.greeting }]));
         return;
       }
 
@@ -39,7 +36,7 @@ export function ChatClient() {
           quickPrompts: Array.isArray(parsed.quickPrompts) ? parsed.quickPrompts : defaultChatConfig.quickPrompts,
         };
         setConfig(nextConfig);
-        setMessages([{ role: "assistant", content: nextConfig.greeting }]);
+        setMessages((current) => (current.length ? current : [{ role: "assistant", content: nextConfig.greeting }]));
       } catch {
         setConfig(defaultChatConfig);
       }
@@ -53,6 +50,27 @@ export function ChatClient() {
       window.removeEventListener("xa-chat-config-updated", loadConfig);
     };
   }, []);
+
+  useEffect(() => {
+    const stored = window.localStorage.getItem(chatHistoryStorageKey);
+    if (!stored) {
+      setMessages([{ role: "assistant", content: defaultChatConfig.greeting }]);
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed) && parsed.length) {
+        setMessages(parsed);
+      }
+    } catch {
+      setMessages([{ role: "assistant", content: defaultChatConfig.greeting }]);
+    }
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem(chatHistoryStorageKey, JSON.stringify(messages.slice(-40)));
+  }, [messages]);
 
   const apiMessages = useMemo(
     () =>
@@ -97,6 +115,7 @@ export function ChatClient() {
         {
           role: "assistant",
           content: payload.reply,
+          provider: payload.provider === "openrouter" ? "openrouter" : "fallback",
         },
       ]);
     } catch (err) {
@@ -111,12 +130,27 @@ export function ChatClient() {
     void sendMessage(draft);
   }
 
+  function clearChat() {
+    const nextMessages = [{ role: "assistant" as const, content: config.greeting }];
+    setMessages(nextMessages);
+    window.localStorage.setItem(chatHistoryStorageKey, JSON.stringify(nextMessages));
+    setError(null);
+  }
+
+  async function copyTranscript() {
+    const transcript = messages.map((message) => `${message.role.toUpperCase()}: ${message.content}`).join("\n\n");
+    await navigator.clipboard.writeText(transcript);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1600);
+  }
+
   return (
     <>
       <div className="message-list" aria-label="Conversation">
         {messages.map((message, index) => (
           <div className={`message-row ${message.role}`} key={`${message.role}-${index}`}>
             <p>{message.content}</p>
+            {message.provider && <span>{message.provider === "openrouter" ? "OpenRouter" : "Fallback"}</span>}
           </div>
         ))}
         {isSending && (
@@ -129,6 +163,12 @@ export function ChatClient() {
       <div className="config-strip">
         <span>{config.displayName}</span>
         <span>{config.tone} tone</span>
+        <button type="button" onClick={copyTranscript}>
+          {copied ? "Copied" : "Copy transcript"}
+        </button>
+        <button type="button" onClick={clearChat}>
+          Clear
+        </button>
       </div>
 
       <div className="prompt-row" aria-label="Quick prompts">

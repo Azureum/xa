@@ -68,9 +68,18 @@ function readStoredConfig(): ChatConfig {
 export function AdminClient() {
   const [config, setConfig] = useState<ChatConfig>(defaultChatConfig);
   const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [health, setHealth] = useState<{
+    ok: boolean;
+    openRouterConfigured: boolean;
+    model: string;
+  } | null>(null);
 
   useEffect(() => {
     setConfig(readStoredConfig());
+    fetch("/api/health")
+      .then((response) => response.json())
+      .then(setHealth)
+      .catch(() => setHealth(null));
   }, []);
 
   function updateConfig<Key extends keyof ChatConfig>(key: Key, value: ChatConfig[Key]) {
@@ -188,6 +197,12 @@ export function AdminClient() {
       <article className="settings-card publish-card">
         <h2>Launch</h2>
         <p>{savedAt ? `Published locally at ${savedAt}.` : "Publish this configuration, then preview the chatbot."}</p>
+        <div className="status-stack">
+          <span className={health?.openRouterConfigured ? "status-good" : "status-warn"}>
+            {health?.openRouterConfigured ? "OpenRouter live" : "Fallback responder active"}
+          </span>
+          <span>{health?.model ?? "openrouter/free"}</span>
+        </div>
         <div className="actions compact">
           <a className="button button-secondary" href="/user">
             Preview
