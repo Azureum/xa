@@ -492,6 +492,36 @@ textarea {
   font-weight: 800;
 }
 
+.test-console .actions {
+  margin-top: 0;
+}
+
+.test-result {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fafafa;
+  padding: 12px;
+}
+
+.test-result span {
+  width: max-content;
+  border-radius: 999px;
+  background: var(--soft);
+  color: var(--accent-strong);
+  padding: 5px 9px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.test-result p {
+  margin: 0;
+  color: var(--text);
+  line-height: 1.5;
+}
+
 .inline-error {
   border-top: 0;
   padding: 0;

@@ -246,6 +246,7 @@ export function ChatClient() {
         <span>{config.brandName}</span>
         <span>{config.displayName}</span>
         <span>{config.tone} tone</span>
+        <span>{messages.length} messages</span>
         <a href={buildEscalationHref()}>Email support</a>
         <button type="button" onClick={copyTranscript}>
           {copied ? "Copied" : "Copy transcript"}

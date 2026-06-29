@@ -130,6 +130,12 @@ export function AdminClient() {
   const [messageCount, setMessageCount] = useState(0);
   const [importText, setImportText] = useState("");
   const [importError, setImportError] = useState<string | null>(null);
+  const [testQuestion, setTestQuestion] = useState("How does pricing work?");
+  const [testResult, setTestResult] = useState<{
+    reply: string;
+    provider: string;
+  } | null>(null);
+  const [isTesting, setIsTesting] = useState(false);
 
   useEffect(() => {
     setConfig(readStoredConfig());
@@ -237,6 +243,43 @@ export function AdminClient() {
       setSavedAt("configuration imported");
     } catch {
       setImportError("Paste a valid XA configuration JSON object.");
+    }
+  }
+
+  async function testAssistant() {
+    const question = testQuestion.trim();
+    if (!question || isTesting) {
+      return;
+    }
+
+    setIsTesting(true);
+    setTestResult(null);
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messages: [{ role: "user", content: question }],
+          config,
+        }),
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(payload?.error ?? "The test request failed.");
+      }
+      setTestResult({
+        reply: payload.reply,
+        provider: payload.provider ?? "unknown",
+      });
+    } catch (error) {
+      setTestResult({
+        reply: error instanceof Error ? error.message : "The test request failed.",
+        provider: "error",
+      });
+    } finally {
+      setIsTesting(false);
     }
   }
 
@@ -428,6 +471,25 @@ export function AdminClient() {
         <button className="button button-secondary" type="button" onClick={exportTranscript}>
           Export transcript
         </button>
+      </article>
+
+      <article className="settings-card wide test-console">
+        <h2>Test assistant</h2>
+        <label>
+          Test question
+          <input value={testQuestion} onChange={(event) => setTestQuestion(event.target.value)} />
+        </label>
+        <div className="actions compact">
+          <button className="button button-primary" type="button" onClick={testAssistant} disabled={isTesting}>
+            {isTesting ? "Testing" : "Run test"}
+          </button>
+        </div>
+        {testResult && (
+          <div className="test-result">
+            <span>{testResult.provider}</span>
+            <p>{testResult.reply}</p>
+          </div>
+        )}
       </article>
 
       <article className="settings-card wide">
